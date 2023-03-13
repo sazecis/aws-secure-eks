@@ -1,28 +1,32 @@
 #!/usr/bin/env python3
-import os
+import boto3
 
 import aws_cdk as cdk
 
-from aws_private_eks_access.aws_private_eks_access_stack import AwsPrivateEksAccessStack
+from eks_access.private import PrivateStack
+from eks_access.public import PublicStack
+from eks_access.network import NetworkStack
+from eks_access.bastion import BastionStack
 
+# Create a new session using the current AWS profile
+session = boto3.session.Session()
+
+# Get the current region
+region = session.region_name
+
+# Get the current account ID
+sts_client = session.client('sts')
+account_id = sts_client.get_caller_identity().get('Account')
+
+env = cdk.Environment(
+    account=account_id,
+    region=region
+)
 
 app = cdk.App()
-AwsPrivateEksAccessStack(app, "AwsPrivateEksAccessStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
-
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
-
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
-
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
-
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
+PrivateStack(app, "PrivateStack", env=env)
+PublicStack(app, "PublicStack", env=env)
+BastionStack(app, "BastionStack", env=env)
+NetworkStack(app, "NetworkStack", env=env)
 
 app.synth()
