@@ -13,13 +13,27 @@ class BastionStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Retrieve the VPC construct using its Name
-        vpc = ec2.Vpc.from_lookup(self, 'PrivateEksVpc', vpc_name='PrivateEksVpc')
+        vpc = ec2.Vpc.from_lookup(
+            self, 'PrivateEksVpc', vpc_name='NetworkStack/PrivateEksVpc')
+
+       # Import the additional security group of the EKS cluster
+        additional_sg_id = cdk.Fn.import_value(
+            'AdditionalSecurityGroupExport')
+        additional_sg = ec2.SecurityGroup.from_security_group_id(
+            self, 'AdditionalSecurityGroup', additional_sg_id)
 
         # Create a new security group with no inbound rules
         security_group = ec2.SecurityGroup(self, 'BastionSecurityGroup',
             vpc=vpc,
             allow_all_outbound=True,
             security_group_name='bastion-security-group'
+        )
+
+        # Allow inbound access from the bastion host to the EKS cluster on port 443
+        additional_sg.add_ingress_rule(
+            peer=security_group,
+            connection=ec2.Port.tcp(443),
+            description='Allow inbound access from the bastion host to the EKS cluster'
         )
 
         # Create a new SSM parameter to store the kubectl version
@@ -29,7 +43,7 @@ class BastionStack(Stack):
         )
 
         # Create a new EC2 instance with the custom security group and instance profile
-        ec2.Instance(self, 'BastionInstance',
+        instance = ec2.Instance(self, 'BastionInstance',
             instance_type=ec2.InstanceType('t3.micro'),
             machine_image=ec2.MachineImage.latest_amazon_linux(),
             vpc=vpc,
