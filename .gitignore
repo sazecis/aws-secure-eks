@@ -10,3 +10,6 @@ __pycache__
 cdk.out*
 
 cdk.context.json
+node_modules
+
+package.json

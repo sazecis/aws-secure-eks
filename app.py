@@ -8,6 +8,9 @@ from eks_access.public_eks import PublicEksStack
 from eks_access.network import NetworkStack
 from eks_access.bastion import BastionStack
 from eks_access.nodegroup import NodeGroupStack
+from eks_access.iam import IamStack
+from eks_access.ecr import EcrStack
+from eks_access.public_ns_access import PublicNsAccessStack
 
 # Create a new session using the current AWS profile
 session = boto3.session.Session()
@@ -25,10 +28,16 @@ env = cdk.Environment(
 )
 
 app = cdk.App()
-PrivateEksStack(app, "PrivateEksStack", env=env)
-PublicEksStack(app, "PublicEksStack", env=env)
-BastionStack(app, "BastionStack", env=env)
+
 NetworkStack(app, "NetworkStack", env=env)
+IamStack(app, "IamStack", env=env)
+PrivateEksStack(app, "PrivateEksStack", env=env)
+BastionStack(app, "BastionStack", env=env)
 NodeGroupStack(app, "NodeGroupStack", env=env)
+
+PublicEksStack(app, "PublicEksStack", env=env)
+PublicNsAccessStack(app, "PublicNsAccessStack", env=env)
+
+EcrStack(app, "EcrStack", env=env)
 
 app.synth()

@@ -14,7 +14,7 @@ class NodeGroupStack(Stack):
 
         # Retrieve the VPC construct using its Name
         vpc = ec2.Vpc.from_lookup(
-            self, 'PrivateEksVpc', vpc_name='NetworkStack/PrivateEksVpc')
+            self, 'PrivateEksVpcForNodeGroup', vpc_name='NetworkStack/PrivateEksVpc')
         
         # Import the private_cluster value from the other stack
         private_cluster_name = cdk.Fn.import_value('PrivateClusterExport')

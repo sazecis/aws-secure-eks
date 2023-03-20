@@ -3,6 +3,7 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_iam as iam,
     aws_ssm as ssm,
+    aws_eks as eks,
     Stack
 )
 from constructs import Construct
@@ -42,13 +43,27 @@ class BastionStack(Stack):
             string_value='1.23.0'
         )
 
+        bastion_role = iam.Role.from_role_name(
+            self, 'BastionRole', role_name='BastionRole')
+
+        # Retrieve the VPC construct using its Name
+        vpc = ec2.Vpc.from_lookup(
+            self, 'PrivateEksVpcForBastion', vpc_name='NetworkStack/PrivateEksVpc')
+
+        # Import the private_cluster value from the other stack
+        private_cluster_name = cdk.Fn.import_value('PrivateClusterExport')
+
+        # Retrieve the private cluster using its name
+        private_cluster = eks.Cluster.from_cluster_attributes(
+            self, 'PrivateCluster', cluster_name=private_cluster_name, vpc=vpc)
+
         # Create a new EC2 instance with the custom security group and instance profile
         instance = ec2.Instance(self, 'BastionInstance',
             instance_type=ec2.InstanceType('t3.micro'),
             machine_image=ec2.MachineImage.latest_amazon_linux(),
             vpc=vpc,
             security_group=security_group,
-            role=iam.Role.from_role_arn(self, 'BastionRole', role_arn='arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'),
+            role=bastion_role,
             block_devices=[
                 ec2.BlockDevice(
                     device_name='/dev/xvda',
